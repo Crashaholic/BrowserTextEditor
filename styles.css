@@ -35,6 +35,33 @@ body {
     white-space: nowrap;
 }
 
+#fileModal {
+    position: fixed;
+    inset: 0px;
+    width: 12rem;
+    height: 5rem;
+    max-width: 100vw;
+    max-height: 100dvh;
+    margin: auto;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
+    background:rgb(77, 77, 77);
+    display:none;
+}
+
+#fileModal span {
+    position: fixed;
+    inset: 0;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+}
+
+#fileModal.showModal {
+    display:block;
+}
+
 table {
     border-collapse: collapse;
     table-layout: fixed;
