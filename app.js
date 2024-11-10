@@ -8,15 +8,11 @@ cellSelected_x = cellSelected_y = 0;
 text = "welcome to browser text editor!";
 isInsertMode = false;
 
-editor.addEventListener('dragenter', preventDefaults, false);
-editor.addEventListener('dragleave', preventDefaults, false);
-editor.addEventListener('dragover', preventDefaults, false);
-editor.addEventListener('drop', preventDefaults, false);
-
-filemodal.addEventListener('dragenter', preventDefaults, false);
-filemodal.addEventListener('dragleave', preventDefaults, false);
-filemodal.addEventListener('dragover', preventDefaults, false);
-filemodal.addEventListener('drop', preventDefaults, false);
+// from: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
+    editor.addEventListener(e, preventDefaults, false)
+    filemodal.addEventListener(e, preventDefaults, false)
+})
 
 function preventDefaults(e) {
     e.preventDefault()
