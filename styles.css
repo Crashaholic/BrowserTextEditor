@@ -79,3 +79,131 @@ td {
 td.selected {
     background: darkgray;
 }
+
+.fg_black {
+    color: black;
+}
+
+.fg_white {
+    color: white;
+}
+
+.fg_red {
+    color: red;
+}
+
+.fg_green {
+    color: green;
+}
+
+.fg_yellow {
+    color: yellow;
+}
+
+.fg_blue {
+    color: blue;
+}
+
+.fg_magenta {
+    color: magenta;
+}
+
+.fg_cyan {
+    color: cyan;
+}
+
+.fg_darkgrey {
+    color: darkgrey;
+}
+
+.fg_grey {
+    color: grey;
+}
+
+.fg_darkred {
+    color: darkred;
+}
+
+.fg_darkgreen {
+    color: darkgreen;
+}
+
+.fg_darkyellow {
+    color: darkorange;
+}
+
+.fg_darkblue {
+    color: darkblue;
+}
+
+.fg_darkmagenta {
+    color: darkmagenta;
+}
+
+.fg_darkcyan {
+    color: darkcyan;
+}
+
+.bg_black {
+    background: black;
+}
+
+.bg_white {
+    background: white;
+}
+
+.bg_red {
+    background: red;
+}
+
+.bg_green {
+    background: green;
+}
+
+.bg_yellow {
+    background: yellow;
+}
+
+.bg_blue {
+    background: blue;
+}
+
+.bg_magenta {
+    background: magenta;
+}
+
+.bg_cyan {
+    background: cyan;
+}
+
+.bg_darkgrey {
+    background: darkgrey;
+}
+
+.bg_grey {
+    background: grey;
+}
+
+.bg_darkred {
+    background: darkred;
+}
+
+.bg_darkgreen {
+    background: darkgreen;
+}
+
+.bg_darkyellow {
+    background: darkorange;
+}
+
+.bg_darkblue {
+    background: darkblue;
+}
+
+.bg_darkmagenta {
+    background: darkmagenta;
+}
+
+.bg_darkcyan {
+    background: darkcyan;
+}

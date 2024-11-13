@@ -4,9 +4,50 @@ const fontsizerect = document.getElementById("measureText").getBoundingClientRec
 const arearect = document.getElementById("measureArea").getBoundingClientRect();
 const numcols = Math.floor(arearect.width / fontsizerect.width);
 const numrows = Math.floor(arearect.height / fontsizerect.height);
-cellSelected_x = cellSelected_y = 0;
+const keyBindings = {};
+//edsel.xstart = edsel.ystart = 0;
 text = "welcome to browser text editor!";
 isInsertMode = false;
+
+class Rect {
+    constructor(xstart = 0, ystart = 0, xend = 0, yend = 0) {
+        this.xstart = xstart;
+        this.ystart = ystart;
+        this.xend = xend;
+        this.yend = yend;
+    }
+
+    // as in: reposition
+    repos(newXStart, newYStart, newXEnd, newYEnd) {
+
+    }
+
+    repos() {
+        
+    }
+}
+
+class EditorSelection extends Rect{ // in case of block selection
+    constructor(xstart, ystart, xend, yend, block) {
+        super(xstart, ystart, xend, yend);
+        this.block = block; // TODO
+    }
+
+    moveStartAndEnd(x, y) {
+        this.xstart = this.xend = x;
+        this.ystart = this.yend = y;
+    }
+
+    start() {
+        return [this.xstart, this.ystart];
+    }
+
+    end() {
+        return [this.xend, this.yend]
+    }
+}
+
+edsel = new EditorSelection(0, 0, 0, 0, false);
 
 // from: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
@@ -40,20 +81,50 @@ function modalHide() {
 editor.addEventListener('drop', dropHandler, false);
 filemodal.addEventListener('drop', dropHandler, false);
 
-function dropHandler() {
+const cxt = {
+    registerKeyBindings, 
+    moveCursorUp, 
+    moveCursorDown, 
+    moveCursorLeft, 
+    moveCursorRight,
+    moveCursor,
+    getInsertMode,
+    setInsertMode,
+    replaceAt,
+    curr,
+    pos,
+    writeAtSelection,
+    writeAtCell,
+    getBoundsX,
+    getBoundsY,
+    getEditorSel,
+    getCellAt,
+    checkFileBounds,
+}
+
+function dropHandler(e) {
     if (e.dataTransfer.items) {
         // Use DataTransferItemList interface to access the file(s)
         [...e.dataTransfer.items].forEach((item, i) => {
             // If dropped items aren't files, reject them
             if (item.kind === "file") {
-                const file = item.getAsFile();
-                console.log(`… file[${i}].name = ${file.name}`);
+                let file = item.getAsFile();
+                console.log(`...file[${i}].name = ${file.name}`);
+                let reader = new FileReader();
+                const bindsRegex = /binds\.js/g;
+                if (file.name.match(bindsRegex)){
+                    reader.onload = (e) => {
+                        const scriptContent = e.target.result;
+                        try {
+                            const scriptFunction = new Function('cxt', scriptContent);
+                            scriptFunction(cxt);
+                        } catch (err) {
+                            console.error("Error loading custom bindings:", err);
+                        }
+                    };
+                }
+                reader.readAsText(file);
             }
-        });
-    } else {
-        // Use DataTransfer interface to access the file(s)
-        [...e.dataTransfer.files].forEach((file, i) => {
-            console.log(`… file[${i}].name = ${file.name}`);
         });
     }
 }
@@ -65,11 +136,27 @@ function replaceAt(str, index, chr) {
 
 /*current position*/
 function curr(offsetx = 0, offsety = 0) {
-    return pos((cellSelected_x + offsetx), (cellSelected_y + offsety));
+    return pos((edsel.xstart + offsetx), (edsel.ystart + offsety));
 }
 
 function pos(x = 0, y = 0){
     return y * numcols + x;
+}
+
+function getBoundsX() {
+    return numcols;
+}
+
+function getBoundsY() {
+    return numrows;
+}
+
+function getEditorSel() {
+    return edsel;
+}
+
+function getCellAt(x, y) {
+    return editor.rows[y].cells[x];
 }
 
 function populateTable() {
@@ -86,28 +173,62 @@ function populateTable() {
     }
 }
 
+function getInsertMode() {
+    return isInsertMode;
+}
+
+function setInsertMode(newMode) {
+    isInsertMode = newMode;
+}
+
+//sx, sy = source, the bigger box bound
+//dx, dy = destin, the smaller box bound
+function checkBounds(sxmin, sxmax, symin, symax, dxmin, dxmax, dymin, dymax) {
+    return (dxmin >= sxmin && dxmax <= sxmax && symin >= dymin && symax <= dymax);
+}
+
+function checkCursorBounds() {
+    return checkBounds(0, numcols, 0, numrows, edsel.xstart, edsel.xend, edsel.ystart, edsel.yend);
+}
+
 function moveCursor(new_x, new_y) {
-    editor.rows[cellSelected_y].cells[cellSelected_x].classList.remove("selected");
-    cellSelected_x = new_x;
-    cellSelected_y = new_y;
-    editor.rows[new_y].cells[new_x].classList.add("selected");
-    document.title = "[" + cellSelected_x + "," + cellSelected_y + "]";
+    getCellAt(edsel.xstart, edsel.ystart).classList.remove("selected");
+    edsel.moveStartAndEnd(new_x, new_y);
+    if (!checkCursorBounds()) {
+        // cursor is out of bounds. panic.
+        if (new_x < 0){
+            edsel.xstart = 0;
+            edsel.xend = 0;
+        }
+        if (new_y < 0) {
+            if (!edsel.block) { // if not block selecting
+                edsel.ystart = 0;
+                edsel.yend = 0;
+            }
+        }
+    }
+    getCellAt(edsel.xstart, edsel.ystart).classList.add("selected");
+    document.title = "[" + edsel.xstart + "," + edsel.ystart + "]";
+}
+
+function moveCursorRel(x, y) {
+    moveCursor(edsel.xstart + x, edsel.ystart + y);
 }
 
 function moveCursorRight() {
-    moveCursor(cellSelected_x + 1, cellSelected_y);
+    moveCursorRel(1, 0);
 }
 
 function moveCursorLeft() {
-    moveCursor(cellSelected_x - 1, cellSelected_y);
+    moveCursorRel(-1, 0);
 }
 
 function moveCursorUp() {
-    moveCursor(cellSelected_x, cellSelected_y - 1);
+    moveCursorRel(0, -1);
 }
 
 function moveCursorDown() {
-    moveCursor(cellSelected_x, cellSelected_y + 1);
+    moveCursorRel(0, 1);
 }
 
 function writeAtCell(x, y, c) {
@@ -118,11 +239,27 @@ function writeAtCell(x, y, c) {
 }
 
 function writeAtSelection(c) {
-    writeAtCell(cellSelected_x, cellSelected_y, c);
+    writeAtCell(edsel.xstart, edsel.ystart, c);
 }
 
-function render_cell(x, y, c) {
+function renderCell(x, y, c) {
     editor.rows[y].cells[x].innerText = c;
+}
+
+function drawStatusBar() {
+    for (let col = 0; col < numcols; col++) {
+        cell = getCellAt(col, numrows - 2);
+        cell.classList.add("fg_black");
+        cell.classList.add("bg_white");
+    }
+
+    positionMarker = "[" + edsel.xstart + "," + edsel.ystart + "]";
+
+    for (let x = 0; x < positionMarker.length; x++) {
+        cell = getCellAt(x + 2, numrows - 2);
+        cell.innerText = positionMarker[x];
+    }
+
 }
 
 function render() {
@@ -130,35 +267,36 @@ function render() {
     for (let row = 0; row < numrows; row++) {
         for (let col = 0; col < numcols; col++) {
             if (index < text.length) {
-                render_cell(col, row, text[index]);
+                renderCell(col, row, text[index]);
                 index++;
             } else {
-                render_cell(col, row, '');
+                renderCell(col, row, '');
             }
         }
     }
+    drawStatusBar();
 }
 
 function update() {
     populateTable();
     render();
-    editor.rows[cellSelected_y].cells[cellSelected_x].classList.add("selected");
+    getCellAt(edsel.xstart, edsel.ystart).classList.add("selected");
 }
 
 function checkFileBounds() {
     if (curr() > text.length) {
         diff = curr() - text.length + 1;
         if (diff > numcols) {
-            if (cellSelected_y > 0) {
-                moveCursor(numcols - 1, cellSelected_y - 1);
+            if (edsel.ystart > 0) {
+                moveCursor(numcols - 1, edsel.ystart - 1);
             }
         } else {
             if (diff > 0) {
-                if (cellSelected_x > 0) {
-                    moveCursor(cellSelected_x - 1, cellSelected_y);
+                if (edsel.xstart > 0) {
+                    moveCursor(edsel.xstart - 1, edsel.ystart);
                 } else {
-                    if (cellSelected_y > 0) {
-                        moveCursor(numcols - 1, cellSelected_y - 1);
+                    if (edsel.ystart > 0) {
+                        moveCursor(numcols - 1, edsel.ystart - 1);
                     }
                 }
             } else {
@@ -172,45 +310,62 @@ function checkFileBounds() {
     }
 }
 
+
+// Function to register key bindings
+function registerKeyBindings(bindings) {
+    for (const key in bindings) {
+        if (typeof bindings[key] === 'function') {
+            keyBindings[key] = bindings[key];
+        } else {
+            console.warn(`Binding for ${key} is not a function and will be ignored.`);
+        }
+    }
+}
+
 document.body.addEventListener('keydown', (e) => {
     e.preventDefault();
-    if (e.key === 'ArrowRight' && cellSelected_x < numcols - 1) {
+    const key = e.key;
+    const ctrl = e.ctrlKey ? 'Ctrl+' : '';
+    const alt = e.altKey ? 'Alt+' : '';
+    const shift = e.shiftKey ? 'Shift+' : '';
+    const keyCombo = `${ctrl}${alt}${shift}${key}`;
+    if (keyBindings[keyCombo]) {
+        e.preventDefault();
+        keyBindings[keyCombo]();
+    } /*else if (e.key === 'ArrowRight' && edsel.xstart < numcols - 1) {
         moveCursorRight();
         checkFileBounds();
-    } else if (e.key === 'ArrowLeft' && cellSelected_x > 0) {
+    } else if (e.key === 'ArrowLeft' && edsel.xstart > 0) {
         moveCursorLeft();
         checkFileBounds();
-    } else if (e.key === 'ArrowDown' && cellSelected_y < numrows - 1) {
+    } else if (e.key === 'ArrowDown' && edsel.ystart < numrows - 1) {
         moveCursorDown();
         checkFileBounds();
-    } else if (e.key === 'ArrowUp' && cellSelected_y > 0) {
+    } else if (e.key === 'ArrowUp' && edsel.ystart > 0) {
         moveCursorUp();
         checkFileBounds();
-    } else if (e.key.length === 1) {
+    }*/ else if (e.key.length === 1) {
         writeAtSelection(e.key);
-        update();
         moveCursorRight();
-    } else if (e.key === ' ' && cellSelected_x < numcols - 1) {
+    } else if (e.key === ' ' && edsel.xstart < numcols - 1) {
         writeAtSelection(' ');
-        update();
         moveCursorRight();
-    } else if (e.key === 'Backspace' && cellSelected_x > 0) {
+    } else if (e.key === 'Backspace' && edsel.xstart > 0) {
         moveCursorLeft();
-        initialIsInsertMode = isInsertMode
-        isInsertMode = true;
+        initialIsInsertMode = getInsertMode();
+        setInsertMode(true);
         writeAtSelection('');
-        isInsertMode = !initialIsInsertMode;
-        update();
+        setInsertMode(initialIsInsertMode);
     } else if (e.key === 'Enter') {
     } else if (e.key === 'Insert') {
         isInsertMode = !isInsertMode;
     } else if (e.key === 'Delete') {
-        initialIsInsertMode = isInsertMode
-        isInsertMode = true;
+        initialIsInsertMode = getInsertMode();
+        setInsertMode(true);
         writeAtSelection('');
-        isInsertMode = !initialIsInsertMode;
-        update();
+        setInsertMode(initialIsInsertMode);
     }
+    update();
 });
 
 function main() {
