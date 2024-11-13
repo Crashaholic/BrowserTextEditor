@@ -6,7 +6,7 @@ const numcols = Math.floor(arearect.width / fontsizerect.width);
 const numrows = Math.floor(arearect.height / fontsizerect.height);
 const keyBindings = {};
 //edsel.xstart = edsel.ystart = 0;
-text = "welcome to browser text editor!";
+text = "welcome! drag and drop `binds.js` on the page for custom keybinds.";
 isInsertMode = false;
 
 class Rect {
