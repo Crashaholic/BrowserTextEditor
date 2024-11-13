@@ -9,6 +9,29 @@ const keyBindings = {};
 text = "welcome! drag and drop `binds.js` on the page for custom keybinds.";
 isInsertMode = false;
 
+// https://stackoverflow.com/a/64420699
+class EditorMode {
+    // Private Fields
+    static #_NORMAL = 0;
+    static #_COMMAND = 10;
+    static #_INSERT = 20;
+    static #_VISUAL = 30;
+    static #_VISUALLINE = 31;
+    static #_VISUALBLOCK = 32;
+    static #_REPLACE = 40;
+
+    // Accessors for "get" functions only (no "set" functions)
+    static get NORMAL() { return this.#_NORMAL; }
+    static get COMMAND() { return this.#_COMMAND; }
+    static get INSERT() { return this.#_INSERT; }
+    static get VISUAL() { return this.#_VISUAL; }
+    static get VISUALLINE() { return this.#_VISUALLINE; }
+    static get VISUALBLOCK() { return this.#_VISUALBLOCK; }
+    static get REPLACE() { return this.#_REPLACE; }
+}
+
+edmod = EditorMode.NORMAL;
+
 class Rect {
     constructor(xstart = 0, ystart = 0, xend = 0, yend = 0) {
         this.xstart = xstart;
@@ -16,12 +39,12 @@ class Rect {
         this.xend = xend;
         this.yend = yend;
     }
-
+    
     // as in: reposition
     repos(newXStart, newYStart, newXEnd, newYEnd) {
-
+        
     }
-
+    
     repos() {
         
     }
@@ -32,16 +55,16 @@ class EditorSelection extends Rect{ // in case of block selection
         super(xstart, ystart, xend, yend);
         this.block = block; // TODO
     }
-
+    
     moveStartAndEnd(x, y) {
         this.xstart = this.xend = x;
         this.ystart = this.yend = y;
     }
-
+    
     start() {
         return [this.xstart, this.ystart];
     }
-
+    
     end() {
         return [this.xend, this.yend]
     }
@@ -252,14 +275,14 @@ function drawStatusBar() {
         cell.classList.add("fg_black");
         cell.classList.add("bg_white");
     }
-
-    positionMarker = "[" + edsel.xstart + "," + edsel.ystart + "]";
-
+    
+    positionMarker = "" + edsel.xstart + "," + edsel.ystart;
+    
     for (let x = 0; x < positionMarker.length; x++) {
-        cell = getCellAt(x + 2, numrows - 2);
+        cell = getCellAt(numcols - 10 - positionMarker.length + x, numrows - 2);
         cell.innerText = positionMarker[x];
     }
-
+    
 }
 
 function render() {
@@ -300,8 +323,7 @@ function checkFileBounds() {
                     }
                 }
             } else {
-                moveCursor(0, 0);
-                // Reached the start of the file (0,0) - stop further recursion
+                moveCursor(0, 0); // Reached the start of the file (0,0) - stop further recursion
                 return;
             }
         }
@@ -333,17 +355,17 @@ document.body.addEventListener('keydown', (e) => {
         e.preventDefault();
         keyBindings[keyCombo]();
     } /*else if (e.key === 'ArrowRight' && edsel.xstart < numcols - 1) {
-        moveCursorRight();
-        checkFileBounds();
+    moveCursorRight();
+    checkFileBounds();
     } else if (e.key === 'ArrowLeft' && edsel.xstart > 0) {
-        moveCursorLeft();
-        checkFileBounds();
+    moveCursorLeft();
+    checkFileBounds();
     } else if (e.key === 'ArrowDown' && edsel.ystart < numrows - 1) {
-        moveCursorDown();
-        checkFileBounds();
+    moveCursorDown();
+    checkFileBounds();
     } else if (e.key === 'ArrowUp' && edsel.ystart > 0) {
-        moveCursorUp();
-        checkFileBounds();
+    moveCursorUp();
+    checkFileBounds();
     }*/ else if (e.key.length === 1) {
         writeAtSelection(e.key);
         moveCursorRight();
