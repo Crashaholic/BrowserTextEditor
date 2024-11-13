@@ -8,20 +8,28 @@
 // something similar to that of vim config file
 
 cxt.registerKeyBindings({
-    "h": () => {                       // Move cursor left
-        cxt.moveCursorLeft(); 
-        cxt.checkFileBounds();
+    "h": () => {
+        if (cxt.getEditorMode() === EditorMode.NORMAL) {
+            cxt.moveCursorLeft(); 
+            cxt.checkFileBounds();
+        }
     },
-    "j": () => {                       // Move cursor down
-        cxt.moveCursorDown();
-        cxt.checkFileBounds();
+    "j": () => {
+        if (cxt.getEditorMode() === EditorMode.NORMAL) {
+            cxt.moveCursorDown();
+            cxt.checkFileBounds();
+        }
     },
-    "k": () => {                       // Move cursor up
-        cxt.moveCursorUp();
-        cxt.checkFileBounds();
+    "k": () => {
+        if (cxt.getEditorMode() === EditorMode.NORMAL) {
+            cxt.moveCursorUp();
+            cxt.checkFileBounds();
+        }
     },
-    "l": () => {                       // Move cursor right
-        cxt.moveCursorRight();
-        cxt.checkFileBounds();
-    }
+    "l": () => {
+        if (cxt.getEditorMode() === EditorMode.NORMAL) {
+            cxt.moveCursorRight();
+            cxt.checkFileBounds();
+        }
+    },
 });

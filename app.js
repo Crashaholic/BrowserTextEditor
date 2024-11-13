@@ -1,13 +1,10 @@
-const editor = document.getElementById("text-editor");
+const editorTable = document.getElementById("text-editor");
 const filemodal = document.getElementById("fileModal");
 const fontsizerect = document.getElementById("measureText").getBoundingClientRect();
 const arearect = document.getElementById("measureArea").getBoundingClientRect();
 const numcols = Math.floor(arearect.width / fontsizerect.width);
 const numrows = Math.floor(arearect.height / fontsizerect.height);
 const keyBindings = {};
-//edsel.xstart = edsel.ystart = 0;
-text = "welcome! drag and drop `binds.js` on the page for custom keybinds.";
-isInsertMode = false;
 
 // https://stackoverflow.com/a/64420699
 class EditorMode {
@@ -66,15 +63,29 @@ class EditorSelection extends Rect{ // in case of block selection
     }
     
     end() {
-        return [this.xend, this.yend]
+        return [this.xend, this.yend];
     }
 }
 
 edsel = new EditorSelection(0, 0, 0, 0, false);
 
+class Editor {
+    buffer = "";
+    inputInsertMode = false;
+    table = null;
+    numCols = 0;
+    numRows = 0;
+    sel = new EditorSelection(0, 0, 0, 0, false);
+    constructor() {
+        this.buffer = "welcome! drag and drop `binds.js` on the page for custom keybinds.";
+    }
+}
+
+ed = new Editor();
+
 // from: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
 ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => {
-    editor.addEventListener(e, preventDefaults, false)
+    editorTable.addEventListener(e, preventDefaults, false)
     filemodal.addEventListener(e, preventDefaults, false)
 })
 
@@ -84,12 +95,12 @@ function preventDefaults(e) {
 }
 
 ;['dragenter', 'dragover'].forEach(e => {
-    editor.addEventListener(e, modalShow, false);
+    editorTable.addEventListener(e, modalShow, false);
     filemodal.addEventListener(e, modalShow, false);
 });
 
 ;['dragleave', 'drop'].forEach(e => {
-    editor.addEventListener(e, modalHide, false);
+    editorTable.addEventListener(e, modalHide, false);
     filemodal.addEventListener(e, modalHide, false);
 });
 
@@ -101,7 +112,7 @@ function modalHide() {
     filemodal.classList.remove("showModal");
 }
 
-editor.addEventListener('drop', dropHandler, false);
+editorTable.addEventListener('drop', dropHandler, false);
 filemodal.addEventListener('drop', dropHandler, false);
 
 const cxt = {
@@ -111,8 +122,8 @@ const cxt = {
     moveCursorLeft, 
     moveCursorRight,
     moveCursor,
-    getInsertMode,
-    setInsertMode,
+    getInputInsertMode,
+    setInputInsertMode,
     replaceAt,
     curr,
     pos,
@@ -123,6 +134,12 @@ const cxt = {
     getEditorSel,
     getCellAt,
     checkFileBounds,
+    getEditorMode,
+    setEditorMode,
+    getEditorSel,
+    checkBounds,
+    checkCursorBounds,
+
 }
 
 function dropHandler(e) {
@@ -154,7 +171,7 @@ function dropHandler(e) {
 
 function replaceAt(str, index, chr) {
     if (index > str.length - 1) return str;
-    return str.substring(0, index) + chr + str.substring(index + 1 * isInsertMode);
+    return str.substring(0, index) + chr + str.substring(index + 1 * ed.inputInsertMode);
 }
 
 /*current position*/
@@ -179,11 +196,11 @@ function getEditorSel() {
 }
 
 function getCellAt(x, y) {
-    return editor.rows[y].cells[x];
+    return editorTable.rows[y].cells[x];
 }
 
 function populateTable() {
-    editor.innerHTML = '';
+    editorTable.innerHTML = '';
     for (let i = 0; i < numrows; i++) {
         row = document.createElement('tr');
         for (let j = 0; j < numcols; j++) {
@@ -192,16 +209,8 @@ function populateTable() {
             cell.style.fontSize = "" + (fontsizerect.height - 2) + "px";
             row.appendChild(cell);
         }
-        editor.appendChild(row);
+        editorTable.appendChild(row);
     }
-}
-
-function getInsertMode() {
-    return isInsertMode;
-}
-
-function setInsertMode(newMode) {
-    isInsertMode = newMode;
 }
 
 //sx, sy = source, the bigger box bound
@@ -234,6 +243,22 @@ function moveCursor(new_x, new_y) {
     document.title = "[" + edsel.xstart + "," + edsel.ystart + "]";
 }
 
+function getEditorMode() {
+    return edmod;
+}
+
+function setEditorMode(newMode) {
+    edmod = newMode;
+}
+
+function getInputInsertMode() {
+    return ed.inputInsertMode;
+}
+
+function setInputInsertMode(newMode) {
+    ed.inputInsertMode = newMode;
+}
+
 function moveCursorRel(x, y) {
     moveCursor(edsel.xstart + x, edsel.ystart + y);
 }
@@ -255,10 +280,10 @@ function moveCursorDown() {
 }
 
 function writeAtCell(x, y, c) {
-    if (y * numrows + x >= text.length)
-        text = text + c;
+    if (y * numrows + x >= ed.buffer.length)
+        ed.buffer = ed.buffer + c;
     else
-    text = replaceAt(text, y * numrows + x, c);
+    ed.buffer = replaceAt(ed.buffer, y * numrows + x, c);
 }
 
 function writeAtSelection(c) {
@@ -266,7 +291,7 @@ function writeAtSelection(c) {
 }
 
 function renderCell(x, y, c) {
-    editor.rows[y].cells[x].innerText = c;
+    editorTable.rows[y].cells[x].innerText = c;
 }
 
 function drawStatusBar() {
@@ -282,15 +307,47 @@ function drawStatusBar() {
         cell = getCellAt(numcols - 10 - positionMarker.length + x, numrows - 2);
         cell.innerText = positionMarker[x];
     }
+
+    modeMarker = "- ";
+    switch (edmod)
+    {
+        case EditorMode.NORMAL: {
+            modeMarker += "NORMAL";
+            break;
+        }
+        case EditorMode.INSERT: {
+            modeMarker += "INSERT";
+            break;
+        }
+        case EditorMode.VISUAL: {
+            modeMarker += "VISUAL";
+            break;
+        }
+        case EditorMode.VISUALLINE: {
+            modeMarker += "VISUAL LINE";
+            break;
+        }
+        case EditorMode.VISUALBLOCK: {
+            modeMarker += "VISUAL BLOCK";
+            break;
+        }
+        default:
+            break;
+    };
+    modeMarker += " -";
     
+    for (let x = 0; x < modeMarker.length; x++) {
+        cell = getCellAt(x + 2, numrows - 2);
+        cell.innerText = modeMarker[x];
+    }   
 }
 
 function render() {
     let index = 0;
     for (let row = 0; row < numrows; row++) {
         for (let col = 0; col < numcols; col++) {
-            if (index < text.length) {
-                renderCell(col, row, text[index]);
+            if (index < ed.buffer.length) {
+                renderCell(col, row, ed.buffer[index]);
                 index++;
             } else {
                 renderCell(col, row, '');
@@ -307,8 +364,8 @@ function update() {
 }
 
 function checkFileBounds() {
-    if (curr() > text.length) {
-        diff = curr() - text.length + 1;
+    if (curr() > ed.buffer.length) {
+        diff = curr() - ed.buffer.length + 1;
         if (diff > numcols) {
             if (edsel.ystart > 0) {
                 moveCursor(numcols - 1, edsel.ystart - 1);
@@ -354,43 +411,110 @@ document.body.addEventListener('keydown', (e) => {
     if (keyBindings[keyCombo]) {
         e.preventDefault();
         keyBindings[keyCombo]();
-    } /*else if (e.key === 'ArrowRight' && edsel.xstart < numcols - 1) {
-    moveCursorRight();
-    checkFileBounds();
-    } else if (e.key === 'ArrowLeft' && edsel.xstart > 0) {
-    moveCursorLeft();
-    checkFileBounds();
-    } else if (e.key === 'ArrowDown' && edsel.ystart < numrows - 1) {
-    moveCursorDown();
-    checkFileBounds();
-    } else if (e.key === 'ArrowUp' && edsel.ystart > 0) {
-    moveCursorUp();
-    checkFileBounds();
-    }*/ else if (e.key.length === 1) {
-        writeAtSelection(e.key);
-        moveCursorRight();
-    } else if (e.key === ' ' && edsel.xstart < numcols - 1) {
-        writeAtSelection(' ');
-        moveCursorRight();
-    } else if (e.key === 'Backspace' && edsel.xstart > 0) {
-        moveCursorLeft();
-        initialIsInsertMode = getInsertMode();
-        setInsertMode(true);
-        writeAtSelection('');
-        setInsertMode(initialIsInsertMode);
-    } else if (e.key === 'Enter') {
-    } else if (e.key === 'Insert') {
-        isInsertMode = !isInsertMode;
+    } else if (e.key.length === 1) {
+        if (edmod === EditorMode.INSERT) {
+            writeAtSelection(e.key);
+            moveCursorRight();
+        }
     } else if (e.key === 'Delete') {
-        initialIsInsertMode = getInsertMode();
-        setInsertMode(true);
+        initialIsInsertMode = getInputInsertMode();
+        setInputInsertMode(true);
         writeAtSelection('');
-        setInsertMode(initialIsInsertMode);
+        setInputInsertMode(initialIsInsertMode);
     }
     update();
 });
 
 function main() {
     update();
+
+    const defaultKeyBinds = '\
+    cxt.registerKeyBindings({\
+        "ArrowUp": () => { \
+            cxt.moveCursorUp(); \
+            cxt.checkFileBounds(); \
+        },\
+        "ArrowDown": () => { \
+            cxt.moveCursorDown(); \
+            cxt.checkFileBounds(); \
+        },\
+        "ArrowLeft": () => { \
+            cxt.moveCursorLeft(); \
+            cxt.checkFileBounds(); \
+        },\
+        "ArrowRight": () => { \
+            cxt.moveCursorRight(); \
+            cxt.checkFileBounds(); \
+        },\
+        "i": () => {\
+            if (cxt.getEditorMode() === EditorMode.NORMAL) {\
+                cxt.setEditorMode(EditorMode.INSERT);\
+            } else if (cxt.getEditorMode() === EditorMode.INSERT) {\
+                cxt.writeAtSelection(\'i\');\
+                cxt.moveCursorRight();\
+            }\
+        },\
+        "h": () => {\
+            if (cxt.getEditorMode() === EditorMode.NORMAL) {\
+                cxt.moveCursorLeft(); \
+                cxt.checkFileBounds();\
+            } else if (cxt.getEditorMode() === EditorMode.INSERT) {\
+                cxt.writeAtSelection(\'h\');\
+                cxt.moveCursorRight();\
+            }\
+        },\
+        "j": () => {\
+            if (cxt.getEditorMode() === EditorMode.NORMAL) {\
+                cxt.moveCursorDown();\
+                cxt.checkFileBounds();\
+            } else if (cxt.getEditorMode() === EditorMode.INSERT) {\
+                cxt.writeAtSelection(\'j\');\
+                cxt.moveCursorRight();\
+            }\
+        },\
+        "k": () => {\
+            if (cxt.getEditorMode() === EditorMode.NORMAL) {\
+                cxt.moveCursorUp();\
+                cxt.checkFileBounds();\
+            } else if (cxt.getEditorMode() === EditorMode.INSERT) {\
+                cxt.writeAtSelection(\'k\');\
+                cxt.moveCursorRight();\
+            }\
+        },\
+        "l": () => {\
+            if (cxt.getEditorMode() === EditorMode.NORMAL) {\
+                cxt.moveCursorRight();\
+                cxt.checkFileBounds();\
+            } else if (cxt.getEditorMode() === EditorMode.INSERT) {\
+                cxt.writeAtSelection(\'l\');\
+                cxt.moveCursorRight();\
+            }\
+        },\
+        "Backspace": () => {\
+            cxt.moveCursorLeft();\
+            initialIsInsertMode = cxt.getInputInsertMode();\
+            cxt.setInputInsertMode(true);\
+            cxt.writeAtSelection(\'\');\
+            cxt.setInputInsertMode(initialIsInsertMode);\
+        },\
+        "Delete": () => {\
+            initialIsInsertMode = cxt.getInputInsertMode();\
+            cxt.setInputInsertMode(true);\
+            cxt.writeAtSelection(\'\');\
+            cxt.setInputInsertMode(initialIsInsertMode);\
+        },\
+        "Escape": () => {\
+            cxt.setEditorMode(EditorMode.NORMAL);\
+        },\
+        "Insert": () => {\
+            cxt.setInputInsertMode(!cxt.getInputInsertMode());\
+        }\
+    });';
+    try {
+        const scriptFunction = new Function('cxt', defaultKeyBinds);
+        scriptFunction(cxt);
+    } catch (err) {
+        console.error("Error loading default bindings:", err);
+    }
 }
 
