@@ -7,29 +7,29 @@
 // <keybind> command
 // something similar to that of vim config file
 
-cxt.registerKeyBindings({
+bindsCxt.registerKeyBindings({
     "h": () => {
-        if (cxt.getEditorMode() === EditorMode.NORMAL) {
-            cxt.moveCursorLeft(); 
-            cxt.checkFileBounds();
+        if (bindsCxt.getEditorMode() === EditorMode.NORMAL) {
+            bindsCxt.moveCursorLeft(); 
+            bindsCxt.checkFileBounds();
         }
     },
     "j": () => {
-        if (cxt.getEditorMode() === EditorMode.NORMAL) {
-            cxt.moveCursorDown();
-            cxt.checkFileBounds();
+        if (bindsCxt.getEditorMode() === EditorMode.NORMAL) {
+            bindsCxt.moveCursorDown();
+            bindsCxt.checkFileBounds();
         }
     },
     "k": () => {
-        if (cxt.getEditorMode() === EditorMode.NORMAL) {
-            cxt.moveCursorUp();
-            cxt.checkFileBounds();
+        if (bindsCxt.getEditorMode() === EditorMode.NORMAL) {
+            bindsCxt.moveCursorUp();
+            bindsCxt.checkFileBounds();
         }
     },
     "l": () => {
-        if (cxt.getEditorMode() === EditorMode.NORMAL) {
-            cxt.moveCursorRight();
-            cxt.checkFileBounds();
+        if (bindsCxt.getEditorMode() === EditorMode.NORMAL) {
+            bindsCxt.moveCursorRight();
+            bindsCxt.checkFileBounds();
         }
     },
 });

@@ -12,10 +12,9 @@ body {
 }
 
 #measureText {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'JetBrainsMono Nerd Font','Courier New', Courier, monospace;
     font-size: 20px;
     position: absolute;
-    visibility: hidden;
     overflow:hidden;
     white-space: nowrap;
     margin:0;
@@ -26,11 +25,8 @@ body {
     display:block;
     width:100%;
     height:100%;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 16px;
     position: absolute;
     background:magenta;
-    visibility: hidden;
     overflow:hidden;
     white-space: nowrap;
 }
@@ -44,10 +40,18 @@ body {
     max-height: 100dvh;
     margin: auto;
     text-align: center;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'JetBrainsMono Nerd Font','Courier New', Courier, monospace;
     font-size: 16px;
     background:rgb(77, 77, 77);
     display:none;
+}
+
+table#text-editor {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    font-family: 'JetBrainsMono Nerd Font','Courier New', Courier, monospace;
+    margin:0;
 }
 
 #fileModal span {
@@ -62,18 +66,12 @@ body {
     display:block;
 }
 
-table {
-    border-collapse: collapse;
-    table-layout: fixed;
-    width: 100%;
-    margin:0;
-}
-
 td {
     /* border: solid 1px white; */
     text-align: center;
-    font-family: monospace;
     padding:0;
+    margin:0;
+    white-space: nowrap;
 }
 
 td.selected {
